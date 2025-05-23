@@ -33,12 +33,12 @@ def copy_rows(src_ws, tgt_ws, row_start, row_end, tgt_start):
         for j, cell in enumerate(row, start=1):
             copy_cell(cell, tgt_ws.cell(row=i, column=j))
 
-st.title("📊 Excel Sheet Splitter (for Grace)")
+st.title("📊 Excel Sheet Splitter")
 
-uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
+uploaded_file = st.file_uploader("上传Excel文件", type=["xlsx"])
 if uploaded_file:
     wb = load_workbook(uploaded_file)
-    sheet_name = st.selectbox("Select a sheet to split", wb.sheetnames)
+    sheet_name = st.selectbox("选择要拆分的表", wb.sheetnames)
     ws = wb[sheet_name]
 
     st.write("### 共享表头区域 (0行开始, 包含逻辑)")
@@ -51,13 +51,21 @@ if uploaded_file:
 
     # Extract header row
     sample_header = [cell.value for cell in ws[header_end + 1]]
-    col_options = [f"{idx}: {val}" for idx, val in enumerate(sample_header)]
+    from openpyxl.utils import get_column_letter
+    
+
+    col_options = [
+        f"{get_column_letter(idx + 1)}: {val}" 
+        for idx, val in enumerate(sample_header)
+    ]
 
     split_col = st.selectbox("按列拆分 (index: value)", col_options)
     name_col = st.selectbox("文件命名列 (index: value)", col_options)
 
-    split_col_index = int(split_col.split(":")[0])
-    name_col_index = int(name_col.split(":")[0])
+    from openpyxl.utils import column_index_from_string
+
+    split_col_index = column_index_from_string(split_col.split(":")[0]) - 1
+    name_col_index = column_index_from_string(name_col.split(":")[0]) - 1
 
     if st.button("拆分并下载"):
         output_buffer = io.BytesIO()
@@ -99,6 +107,6 @@ if uploaded_file:
         st.download_button(
             label="📥 下载所有拆分文件 (.zip)",
             data=output_buffer.getvalue(),
-            file_name="split_excel_files.zip",
+            file_name="已拆分文件.zip",
             mime="application/zip"
         )
